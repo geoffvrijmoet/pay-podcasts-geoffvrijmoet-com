@@ -5,16 +5,14 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const items = [
-  { href: "/", label: "Home" },
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/settings", label: "Settings" },
+  { href: "/", label: "My Invoices" },
 ];
 
 export function MainNav({ className }: { className?: string }) {
   const pathname = usePathname();
 
   return (
-    <nav className={cn("flex items-center space-x-4 lg:space-x-6", className)}>
+    <nav className={cn("flex items-center space-x-4 lg:space-x-6 px-6", className)}>
       {items.map((item) => (
         <Link
           key={item.href}

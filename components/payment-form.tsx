@@ -72,7 +72,7 @@ function PaymentFormContent({ amount, currency }: { amount: number; currency: st
         
         <Button 
           type="submit" 
-          className="w-full" 
+          className="w-full bg-transparent border border-blue-400 text-blue-400 hover:bg-blue-400 hover:text-white transition-colors" 
           disabled={!stripe || isLoading}
         >
           {isLoading ? 'Processing...' : 'Pay Now'}
@@ -88,7 +88,16 @@ export function PaymentForm({ clientSecret, amount, currency }: Omit<PaymentForm
     <Elements stripe={stripePromise} options={{ 
       clientSecret,
       appearance: {
-        theme: 'stripe',
+        theme: 'night',
+        variables: {
+          colorText: '#60A5FA', // text-blue-400
+          fontFamily: 'Quicksand, sans-serif',
+        },
+        rules: {
+          '.Label': {
+            color: '#60A5FA' // text-blue-400
+          }
+        }
       }
     }}>
       <Card className="p-6">
