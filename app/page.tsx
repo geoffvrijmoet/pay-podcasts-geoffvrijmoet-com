@@ -26,7 +26,7 @@ interface ClientDocument {
 }
 
 type MongoAggregateResult = {
-  _id: { toString(): string };
+  _id: Types.ObjectId;
   hasDateInvoiced: number;
   sortDate: Date;
   episodeTitle: string;
@@ -83,7 +83,7 @@ async function getClientInvoices(email: string): Promise<InvoiceResult[]> {
   const results = await Invoice.aggregate([
     { 
       $match: { 
-        clientId: client._id 
+        clientId: new Types.ObjectId(client._id.toString())
       } 
     },
     ...aggregation
