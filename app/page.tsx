@@ -6,9 +6,9 @@ import { Invoice } from '@/lib/models/invoice';
 import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 import { PipelineStage, Types } from 'mongoose';
+import { formatCurrency } from '@/lib/format';
 
-interface InvoiceResult {
-  _id: string;
+interface BaseInvoiceResult {
   hasDateInvoiced: number;
   sortDate: Date;
   episodeTitle: string;
@@ -17,9 +17,19 @@ interface InvoiceResult {
   datePaid: Date | null;
 }
 
-interface MongoDocument extends InvoiceResult {
-  _id: Types.ObjectId;
+interface InvoiceResult extends BaseInvoiceResult {
+  _id: string;
 }
+
+type MongoAggregateResult = {
+  _id: { toString(): string };
+  hasDateInvoiced: number;
+  sortDate: Date;
+  episodeTitle: string;
+  dateInvoiced: Date | null;
+  earnedAfterFees: number;
+  datePaid: Date | null;
+};
 
 async function getClientInvoices(email: string): Promise<InvoiceResult[]> {
   await connectToDatabase();
@@ -51,24 +61,38 @@ async function getClientInvoices(email: string): Promise<InvoiceResult[]> {
   ];
 
   if (email === 'hello@geoffvrijmoet.com') {
-    const results = await Invoice.aggregate(aggregation);
+    const results = await Invoice.aggregate(aggregation) as MongoAggregateResult[];
     return results.map(doc => ({
-      ...doc,
-      _id: (doc as MongoDocument)._id.toString()
+      hasDateInvoiced: doc.hasDateInvoiced,
+      sortDate: doc.sortDate,
+      episodeTitle: doc.episodeTitle,
+      dateInvoiced: doc.dateInvoiced,
+      earnedAfterFees: doc.earnedAfterFees,
+      datePaid: doc.datePaid,
+      _id: doc._id.toString()
     }));
   }
   
   const client = await Client.findOne({ email }).lean();
   if (!client) return [];
 
-  // @ts-expect-error - MongoDB type mismatch with clientId
   const results = await Invoice.aggregate([
-    { $match: { clientId: client._id } },
+    { 
+      $match: { 
+        clientId: new Types.ObjectId(client._id) 
+      } 
+    },
     ...aggregation
-  ]);
+  ]) as MongoAggregateResult[];
+
   return results.map(doc => ({
-    ...doc,
-    _id: (doc as MongoDocument)._id.toString()
+    hasDateInvoiced: doc.hasDateInvoiced,
+    sortDate: doc.sortDate,
+    episodeTitle: doc.episodeTitle,
+    dateInvoiced: doc.dateInvoiced,
+    earnedAfterFees: doc.earnedAfterFees,
+    datePaid: doc.datePaid,
+    _id: doc._id.toString()
   }));
 }
 
