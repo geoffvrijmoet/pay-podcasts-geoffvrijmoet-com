@@ -1,86 +1,143 @@
-'use client';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
+import { connectToDatabase } from '@/lib/utils/db';
+import { Client } from '@/lib/models/client';
+import { Invoice } from '@/lib/models/invoice';
+import { Card } from '@/components/ui/card';
+import Link from 'next/link';
+import { PipelineStage, Types } from 'mongoose';
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, Clock, Users } from "lucide-react";
+interface InvoiceResult {
+  _id: string;
+  hasDateInvoiced: number;
+  sortDate: Date;
+  episodeTitle: string;
+  dateInvoiced: Date | null;
+  earnedAfterFees: number;
+  datePaid: Date | null;
+}
 
-export default function HomePage() {
-  const [stats, setStats] = useState({
-    metric1: 42,
-    metric2: 128,
-    metric3: 24.5,
-    metric4: 8
-  });
+interface MongoDocument extends InvoiceResult {
+  _id: Types.ObjectId;
+}
+
+async function getClientInvoices(email: string): Promise<InvoiceResult[]> {
+  await connectToDatabase();
+  
+  const aggregation: PipelineStage[] = [
+    {
+      $project: {
+        _id: 1,
+        hasDateInvoiced: { 
+          $cond: { 
+            if: { $eq: ["$dateInvoiced", null] }, 
+            then: 0, 
+            else: 1 
+          }
+        },
+        sortDate: { $ifNull: ["$dateInvoiced", "$createdAt"] },
+        episodeTitle: 1,
+        dateInvoiced: 1,
+        earnedAfterFees: 1,
+        datePaid: 1
+      }
+    },
+    {
+      $sort: { 
+        hasDateInvoiced: -1 as const,
+        sortDate: -1 as const
+      }
+    }
+  ];
+
+  if (email === 'hello@geoffvrijmoet.com') {
+    const results = await Invoice.aggregate(aggregation);
+    return results.map(doc => ({
+      ...doc,
+      _id: (doc as MongoDocument)._id.toString()
+    }));
+  }
+  
+  const client = await Client.findOne({ email }).lean();
+  if (!client) return [];
+
+  // @ts-expect-error - MongoDB type mismatch with clientId
+  const results = await Invoice.aggregate([
+    { $match: { clientId: client._id } },
+    ...aggregation
+  ]);
+  return results.map(doc => ({
+    ...doc,
+    _id: (doc as MongoDocument)._id.toString()
+  }));
+}
+
+export default async function HomePage() {
+  const session = await auth();
+  
+  if (!session.userId) {
+    redirect('/sign-in');
+  }
+
+  const user = await currentUser();
+  const invoices = await getClientInvoices(user?.emailAddresses[0].emailAddress ?? '');
 
   return (
-    <div className="space-y-8">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Metric 1</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.metric1}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Metric 2</CardTitle>
-            <BarChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.metric2}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Metric 3</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.metric3}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Metric 4</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.metric4}</div>
-          </CardContent>
-        </Card>
+    <div className="max-w-4xl mx-auto p-4">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Your Invoices</h1>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              No data available.
-            </p>
-          </CardContent>
+      {invoices.length === 0 ? (
+        <Card className="p-6 text-center">
+          <p className="text-gray-500">No invoices found.</p>
         </Card>
-        
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Summary</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              No data available.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      ) : (
+        <div className="space-y-4">
+          {invoices.map((invoice) => {
+            console.log('Rendering invoice:', {
+              id: invoice._id,
+              title: invoice.episodeTitle,
+              date: invoice.dateInvoiced,
+              amount: invoice.earnedAfterFees,
+              datePaid: invoice.datePaid
+            });
+            
+            return (
+              <Link 
+                key={(invoice._id as { toString(): string }).toString()} 
+                href={`/invoice/${invoice._id}`}
+                className="block"
+              >
+                <Card className="p-6 hover:shadow-lg transition-shadow">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">{invoice.episodeTitle || 'Untitled Episode'}</p>
+                      <p className="text-sm text-gray-500">
+                        {invoice.dateInvoiced ? new Date(invoice.dateInvoiced).toLocaleDateString() : 'No date'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold">
+                        {new Intl.NumberFormat('en-US', {
+                          style: 'currency',
+                          currency: 'USD',
+                        }).format(invoice.earnedAfterFees || 0)}
+                      </p>
+                      <span className={`
+                        inline-block px-2 py-1 text-xs rounded-full
+                        ${invoice.datePaid ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
+                      `}>
+                        {invoice.datePaid ? 'Paid' : 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
