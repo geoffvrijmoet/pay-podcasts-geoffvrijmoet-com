@@ -20,6 +20,11 @@ interface InvoiceResult extends BaseInvoiceResult {
   _id: string;
 }
 
+interface ClientDocument {
+  _id: Types.ObjectId;
+  email: string;
+}
+
 type MongoAggregateResult = {
   _id: { toString(): string };
   hasDateInvoiced: number;
@@ -72,13 +77,13 @@ async function getClientInvoices(email: string): Promise<InvoiceResult[]> {
     }));
   }
   
-  const client = await Client.findOne({ email }).lean();
+  const client = await Client.findOne({ email }).lean() as ClientDocument | null;
   if (!client) return [];
 
   const results = await Invoice.aggregate([
     { 
       $match: { 
-        clientId: new Types.ObjectId(client._id) 
+        clientId: client._id 
       } 
     },
     ...aggregation
