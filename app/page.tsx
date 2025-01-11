@@ -6,7 +6,6 @@ import { Invoice } from '@/lib/models/invoice';
 import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 import { PipelineStage, Types } from 'mongoose';
-import { formatCurrency } from '@/lib/format';
 
 interface BaseInvoiceResult {
   hasDateInvoiced: number;
