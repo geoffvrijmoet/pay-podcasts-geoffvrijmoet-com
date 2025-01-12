@@ -19,10 +19,9 @@ interface PaymentFormProps {
   invoiceId: string;
 }
 
-function CheckoutForm({ amount, currency }: { amount: number; currency: string }) {
+function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -180,7 +179,7 @@ export function PaymentForm({ amount, currency, invoiceId }: PaymentFormProps) {
           },
         }}
       >
-        <CheckoutForm amount={amount} currency={currency} />
+        <CheckoutForm />
       </Elements>
     </div>
   );

@@ -12,7 +12,7 @@ interface BaseInvoiceResult {
   sortDate: Date;
   episodeTitle: string;
   dateInvoiced: Date | null;
-  earnedAfterFees: number;
+  invoicedAmount: number;
   datePaid: Date | null;
 }
 
@@ -31,7 +31,7 @@ type MongoAggregateResult = {
   sortDate: Date;
   episodeTitle: string;
   dateInvoiced: Date | null;
-  earnedAfterFees: number;
+  invoicedAmount: number;
   datePaid: Date | null;
 };
 
@@ -52,7 +52,7 @@ async function getClientInvoices(email: string): Promise<InvoiceResult[]> {
         sortDate: { $ifNull: ["$dateInvoiced", "$createdAt"] },
         episodeTitle: 1,
         dateInvoiced: 1,
-        earnedAfterFees: 1,
+        invoicedAmount: 1,
         datePaid: 1
       }
     },
@@ -71,7 +71,7 @@ async function getClientInvoices(email: string): Promise<InvoiceResult[]> {
       sortDate: doc.sortDate,
       episodeTitle: doc.episodeTitle,
       dateInvoiced: doc.dateInvoiced,
-      earnedAfterFees: doc.earnedAfterFees,
+      invoicedAmount: doc.invoicedAmount,
       datePaid: doc.datePaid,
       _id: doc._id.toString()
     }));
@@ -94,7 +94,7 @@ async function getClientInvoices(email: string): Promise<InvoiceResult[]> {
     sortDate: doc.sortDate,
     episodeTitle: doc.episodeTitle,
     dateInvoiced: doc.dateInvoiced,
-    earnedAfterFees: doc.earnedAfterFees,
+    invoicedAmount: doc.invoicedAmount,
     datePaid: doc.datePaid,
     _id: doc._id.toString()
   }));
@@ -127,7 +127,7 @@ export default async function HomePage() {
               id: invoice._id,
               title: invoice.episodeTitle,
               date: invoice.dateInvoiced,
-              amount: invoice.earnedAfterFees,
+              amount: invoice.invoicedAmount,
               datePaid: invoice.datePaid
             });
             
@@ -150,7 +150,7 @@ export default async function HomePage() {
                         {new Intl.NumberFormat('en-US', {
                           style: 'currency',
                           currency: 'USD',
-                        }).format(invoice.earnedAfterFees || 0)}
+                        }).format(invoice.invoicedAmount || 0)}
                       </p>
                       <span className={`
                         inline-block px-2 py-1 text-xs rounded-full
