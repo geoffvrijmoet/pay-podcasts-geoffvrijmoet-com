@@ -10,17 +10,21 @@ function PaymentStatusContent() {
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
   const searchParams = useSearchParams();
   const paymentIntentId = searchParams.get('payment_intent');
+  const paymentIntentClientSecret = searchParams.get('payment_intent_client_secret');
 
   useEffect(() => {
-    if (paymentIntentId) {
-      fetch(`/api/payments/verify?payment_intent=${paymentIntentId}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setStatus(data.success ? 'success' : 'error');
-        })
-        .catch(() => setStatus('error'));
+    if (!paymentIntentId || !paymentIntentClientSecret) {
+      setStatus('error');
+      return;
     }
-  }, [paymentIntentId]);
+
+    fetch(`/api/payments/verify?payment_intent=${paymentIntentId}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setStatus(data.success ? 'success' : 'error');
+      })
+      .catch(() => setStatus('error'));
+  }, [paymentIntentId, paymentIntentClientSecret]);
 
   return (
     <Card className="p-6 text-center">

@@ -18,9 +18,14 @@ export async function GET(request: Request) {
       await connectToDatabase();
       
       // Update invoice status
-      await Invoice.findOneAndUpdate(
-        { 'paymentIntentId': paymentIntentId },
-        { $set: { status: 'paid' } }
+      await Invoice.findByIdAndUpdate(
+        paymentIntent.metadata?.invoiceId,
+        { 
+          $set: { 
+            datePaid: new Date(),
+            paymentMethod: paymentIntent.payment_method_types?.[0] || 'card'
+          } 
+        }
       );
 
       return NextResponse.json({ success: true });
