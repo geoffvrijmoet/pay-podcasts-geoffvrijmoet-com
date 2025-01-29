@@ -1,9 +1,15 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)', 
   '/sign-up(.*)',
-  '/invoice/(.*)'  // Add invoice routes
-])
+  '/invoice/(.*)',
+  '/api/invoices/:id/pdf',
+  '/api/create-payment-intent',
+  '/api/create-checkout-session',
+  '/api/payments/verify',
+  '/payment/(.*)'
+]);
 
 export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {

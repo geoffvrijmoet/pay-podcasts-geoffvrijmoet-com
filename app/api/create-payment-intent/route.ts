@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/utils/stripe';
+import { Invoice } from '@/lib/models/invoice';
+import { connectToDatabase } from '@/lib/utils/db';
 
 export async function POST(request: Request) {
   try {
@@ -12,14 +14,28 @@ export async function POST(request: Request) {
       );
     }
 
+    await connectToDatabase();
+    const invoice = await Invoice.findById(invoiceId);
+
+    if (!invoice) {
+      return NextResponse.json(
+        { error: 'Invoice not found' },
+        { status: 404 }
+      );
+    }
+
+    if (invoice.datePaid) {
+      return NextResponse.json(
+        { error: 'Invoice has already been paid' },
+        { status: 400 }
+      );
+    }
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
       currency,
       metadata: {
         invoiceId,
-      },
-      automatic_payment_methods: {
-        enabled: true,
       },
     });
 
@@ -29,7 +45,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error creating payment intent:', error);
     return NextResponse.json(
-      { error: 'Error creating payment intent' },
+      { error: 'Failed to create payment intent' },
       { status: 500 }
     );
   }

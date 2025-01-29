@@ -77,24 +77,10 @@ export default async function InvoicePage({ params }: { params: { id: string } }
 
     const clientRates = clientDoc.get('rates') || [];
 
-    if (invoice.datePaid) {
-      return (
-        <div className="max-w-2xl mx-auto p-4">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-            <h1 className="text-green-800 text-xl font-semibold">Invoice Paid</h1>
-            <p className="text-green-700 mt-1">This invoice was paid on {new Date(invoice.datePaid).toLocaleDateString()}</p>
-          </div>
-          <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-gray-700 rounded-lg">
-            <InvoiceDetails invoice={invoice} clientRates={clientRates} />
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="max-w-2xl mx-auto p-4">
-        <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-gray-700 rounded-lg">
-          <InvoiceDetails invoice={invoice} clientRates={clientRates} />
+    const content = (
+      <div className="bg-gradient-to-b from-gray-900 to-gray-800 border border-gray-700 rounded-lg">
+        <InvoiceDetails invoice={invoice} clientRates={clientRates} />
+        {!invoice.datePaid && (
           <div className="border-t border-gray-700">
             <PaymentForm 
               amount={invoice.invoicedAmount}
@@ -102,7 +88,21 @@ export default async function InvoicePage({ params }: { params: { id: string } }
               invoiceId={invoice._id.toString()}
             />
           </div>
-        </div>
+        )}
+      </div>
+    );
+
+    return (
+      <div className="max-w-2xl mx-auto p-4">
+        {invoice.datePaid && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+            <h1 className="text-green-800 text-xl font-semibold">Invoice Paid</h1>
+            <p className="text-green-700 mt-1">
+              This invoice was paid on {new Date(invoice.datePaid).toLocaleDateString()}
+            </p>
+          </div>
+        )}
+        {content}
       </div>
     );
   } catch (error) {
