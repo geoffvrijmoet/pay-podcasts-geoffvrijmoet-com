@@ -23,6 +23,7 @@ function CheckoutForm() {
   const elements = useElements();
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [saveCard, setSaveCard] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +68,19 @@ function CheckoutForm() {
         }}
       />
 
+      <div className="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          id="saveCard"
+          checked={saveCard}
+          onChange={(e) => setSaveCard(e.target.checked)}
+          className="h-4 w-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+        />
+        <label htmlFor="saveCard" className="text-sm text-gray-400">
+          Save card for future payments
+        </label>
+      </div>
+
       {errorMessage && (
         <div className="text-red-500 text-sm mt-2">
           {errorMessage}
@@ -98,6 +112,7 @@ export function PaymentForm({ amount, currency, invoiceId }: PaymentFormProps) {
         amount,
         currency,
         invoiceId,
+        saveCard: true, // Always enable setup for future payments
       }),
     })
       .then((res) => res.json())

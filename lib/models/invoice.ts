@@ -4,6 +4,7 @@ export interface IInvoice extends Document {
   _id: mongoose.Types.ObjectId;
   client: string;
   clientId: mongoose.Types.ObjectId;
+  stripeCustomerId?: string;
   episodeTitle: string;
   type: string;
   earnedAfterFees: number;
@@ -33,6 +34,7 @@ export interface IInvoice extends Document {
 const InvoiceSchema = new Schema<IInvoice>({
   client: { type: String, required: true },
   clientId: { type: Schema.Types.ObjectId, ref: 'Client', required: true },
+  stripeCustomerId: { type: String },
   episodeTitle: { type: String, required: true },
   type: { type: String, required: true },
   earnedAfterFees: { type: Number, required: true },
