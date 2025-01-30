@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/utils/stripe';
 import { Invoice } from '@/lib/models/invoice';
+import { Client } from '@/lib/models/client';
 import { connectToDatabase } from '@/lib/utils/db';
 
 export async function POST(request: Request) {
@@ -31,11 +32,25 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!invoice.stripeCustomerId) {
+    // Get the client's email
+    const client = await Client.findById(invoice.clientId);
+    if (!client) {
       return NextResponse.json(
-        { error: 'No saved payment method found for this customer' },
-        { status: 400 }
+        { error: 'Client not found' },
+        { status: 404 }
       );
+    }
+
+    if (!invoice.stripeCustomerId) {
+      // Create a new customer with the client's email
+      const customer = await stripe.customers.create({
+        email: client.email,
+        metadata: {
+          clientId: invoice.clientId.toString(),
+        },
+      });
+      invoice.stripeCustomerId = customer.id;
+      await invoice.save();
     }
 
     // Get the customer's saved payment methods
