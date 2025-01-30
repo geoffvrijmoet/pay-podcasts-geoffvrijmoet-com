@@ -33,7 +33,10 @@ export async function POST(request: Request) {
     }
 
     // Get the client's email
+    console.log('Looking up client with ID:', invoice.clientId);
     const client = await Client.findById(invoice.clientId);
+    console.log('Found client:', client);
+    
     if (!client) {
       return NextResponse.json(
         { error: 'Client not found' },
@@ -41,14 +44,24 @@ export async function POST(request: Request) {
       );
     }
 
+    if (!client.email) {
+      return NextResponse.json(
+        { error: 'Client email not found' },
+        { status: 400 }
+      );
+    }
+
     if (!invoice.stripeCustomerId) {
+      console.log('Creating Stripe customer with email:', client.email);
       // Create a new customer with the client's email
       const customer = await stripe.customers.create({
         email: client.email,
+        name: client.name,
         metadata: {
           clientId: invoice.clientId.toString(),
         },
       });
+      console.log('Created Stripe customer:', customer.id);
       invoice.stripeCustomerId = customer.id;
       await invoice.save();
     }
