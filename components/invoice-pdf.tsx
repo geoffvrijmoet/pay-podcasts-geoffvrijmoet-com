@@ -22,23 +22,56 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 20,
   },
-  row: {
+  gridContainer: {
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  gridHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f8f8f8',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    padding: 10,
+  },
+  gridRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    padding: 10,
+  },
+  gridCol1: {
+    flex: 2,
+  },
+  gridCol2: {
+    flex: 1,
+    textAlign: 'right',
+  },
+  gridCol3: {
+    flex: 1,
+    textAlign: 'right',
+  },
+  headerText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  cellText: {
+    fontSize: 12,
+    color: '#444',
+  },
+  clientInfo: {
+    marginBottom: 30,
+  },
+  totalContainer: {
+    marginTop: 20,
+    alignSelf: 'flex-end',
+    width: '40%',
+  },
+  totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 5,
-  },
-  label: {
-    fontSize: 12,
-    color: '#666',
-  },
-  value: {
-    fontSize: 12,
-  },
-  total: {
-    marginTop: 20,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
+    paddingVertical: 5,
   },
   totalLabel: {
     fontSize: 14,
@@ -69,66 +102,59 @@ export function InvoicePDF({ invoice }: InvoicePDFProps) {
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <Text style={styles.title}>Invoice</Text>
+          <Text style={styles.subtitle}>Invoice #{invoice.id}</Text>
           <Text style={styles.subtitle}>Invoice Date: {invoice.dateInvoiced ? new Date(invoice.dateInvoiced).toLocaleDateString() : 'Not yet invoiced'}</Text>
           {invoice.datePaid && (
             <Text style={styles.subtitle}>Paid Date: {new Date(invoice.datePaid).toLocaleDateString()}</Text>
           )}
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.subtitle}>Client Information</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Client:</Text>
-            <Text style={styles.value}>{invoice.client}</Text>
-          </View>
+        <View style={styles.clientInfo}>
+          <Text style={styles.subtitle}>Bill To:</Text>
+          <Text style={styles.cellText}>{invoice.client}</Text>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.subtitle}>Episode Details</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Episode Title:</Text>
-            <Text style={styles.value}>{invoice.episodeTitle}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Type:</Text>
-            <Text style={styles.value}>{invoice.type}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Length:</Text>
-            <Text style={styles.value}>
-              {`${invoice.length.hours}h ${invoice.length.minutes}m ${invoice.length.seconds}s`}
-            </Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Billed Minutes:</Text>
-            <Text style={styles.value}>{invoice.billedMinutes} minutes</Text>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.subtitle}>Billing Details</Text>
-          <View style={styles.row}>
-            <Text style={styles.label}>Rate per Minute:</Text>
-            <Text style={styles.value}>{formatCurrency(invoice.ratePerMinute)}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Billable Hours:</Text>
-            <Text style={styles.value}>{invoice.billableHours} hours</Text>
-          </View>
-          {invoice.note && (
-            <View style={styles.row}>
-              <Text style={styles.label}>Note:</Text>
-              <Text style={styles.value}>{invoice.note}</Text>
+        <View style={styles.gridContainer}>
+          <View style={styles.gridHeader}>
+            <View style={styles.gridCol1}>
+              <Text style={styles.headerText}>Description</Text>
             </View>
-          )}
+            <View style={styles.gridCol2}>
+              <Text style={styles.headerText}>Quantity</Text>
+            </View>
+            <View style={styles.gridCol3}>
+              <Text style={styles.headerText}>Amount</Text>
+            </View>
+          </View>
+
+          <View style={styles.gridRow}>
+            <View style={styles.gridCol1}>
+              <Text style={styles.cellText}>{invoice.episodeTitle}</Text>
+              <Text style={styles.cellText}>{invoice.type}</Text>
+              <Text style={styles.cellText}>Length: {`${invoice.length.hours}h ${invoice.length.minutes}m ${invoice.length.seconds}s`}</Text>
+            </View>
+            <View style={styles.gridCol2}>
+              <Text style={styles.cellText}>{invoice.billedMinutes} minutes</Text>
+            </View>
+            <View style={styles.gridCol3}>
+              <Text style={styles.cellText}>{formatCurrency(invoice.ratePerMinute * invoice.billedMinutes)}</Text>
+            </View>
+          </View>
         </View>
 
-        <View style={[styles.section, styles.total]}>
-          <View style={styles.row}>
+        <View style={styles.totalContainer}>
+          <View style={[styles.totalRow, { borderTopWidth: 1, borderTopColor: '#eee' }]}>
             <Text style={styles.totalLabel}>Total Amount:</Text>
             <Text style={styles.totalValue}>{formatCurrency(invoice.invoicedAmount)}</Text>
           </View>
         </View>
+
+        {invoice.note && (
+          <View style={[styles.section, { marginTop: 20 }]}>
+            <Text style={styles.subtitle}>Notes:</Text>
+            <Text style={styles.cellText}>{invoice.note}</Text>
+          </View>
+        )}
 
         <Text style={styles.footer}>
           Thank you for your business!

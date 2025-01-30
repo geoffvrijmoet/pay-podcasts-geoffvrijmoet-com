@@ -12,11 +12,21 @@ function getInvoiceCalculation(invoice: IInvoice, clientRates: IRate[]) {
     return `${formatCurrency(invoice.invoicedAmount)}`;
   }
 
+  const formatTime = (time: { hours: number; minutes: number; seconds: number }) => {
+    const parts = [];
+    if (time.hours > 0) parts.push(`${time.hours} hour${time.hours !== 1 ? 's' : ''}`);
+    if (time.minutes > 0) parts.push(`${time.minutes} minute${time.minutes !== 1 ? 's' : ''}`);
+    if (time.seconds > 0) parts.push(`${time.seconds} second${time.seconds !== 1 ? 's' : ''}`);
+    return parts.join(', ');
+  };
+
   switch (matchingRate.rateType) {
     case 'Per delivered minute':
       return `${invoice.billedMinutes} minutes @ ${formatCurrency(matchingRate.rate)}/minute`;
-    case 'Hourly':
-      return `${invoice.billableHours} hours @ ${formatCurrency(matchingRate.rate)}/hour`;
+    case 'Hourly': {
+      const timeDisplay = formatTime(invoice.editingTime);
+      return `${timeDisplay} @ ${formatCurrency(matchingRate.rate)}/hour`;
+    }
     case 'Flat rate':
       return 'Flat fee';
     default:
